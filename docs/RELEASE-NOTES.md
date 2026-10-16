@@ -1,42 +1,38 @@
-# 轻卸 · AppSweep v1.0.0
+# 轻卸 · AppSweep v1.0.1
 
 ## 中文
 
-首次开源发布，MIT 许可。
+修复 OneDrive 等包含 framework 符号链接的应用容量被严重低估的问题。旧遍历会跳过其他真实文件，现已修正；内置扩展识别中的相同问题也已修复。
 
-- 拖放或选择应用，扫描常见用户级残留并显示匹配依据。
-- 确认后移入废纸篓，逐项恢复记录，避免覆盖已有文件。
-- 系统应用、自身、符号链接与运行中应用保护。
-- 中英文文档、MIT 许可、arm64 DMG 与 SHA-256 校验。
+- 本机 OneDrive 实测：旧版 135,602,176 字节，新版 1,045,090,304 字节，与完整遍历一致。
+- 仍不跟随符号链接，不把链接指向的外部文件算作应用数据。
+- 20 项自动检查通过，包括新回归测试、精确匹配、外部链接隔离、恢复冲突及临时文件的真实废纸篓往返。
+- 卸载仍是确认后移动整个已选项目到废纸篓，未改变恢复记录格式。
 
-**下载：`AppSweep-1.0.0-arm64.dmg`。** 自动生成的 Source code ZIP/TAR 是源码，不是安装包。
+下载 **AppSweep-1.0.1-arm64.dmg**，退出旧版轻卸后替换 Applications 中的应用。源码 ZIP 不是安装包。
 
-**运行环境：Apple Silicon（M 系列，arm64），macOS 14 Sonoma 或更新。**不支持 Intel。本次实际验证在 macOS 27.0.1 / Apple Silicon 完成，未覆盖所有旧版本。应用界面为简体中文。
+运行环境：**Apple Silicon（M 系列）、macOS 14+**。应用界面为简体中文。本次验证环境为 macOS 27.0.1 / Apple Silicon，未逐一验证旧系统。
 
-打开 DMG，把 `轻卸.app` 拖到 Applications，推出映像后运行。发布包采用 ad-hoc 签名，**没有 Apple Developer ID 签名或公证**；首次启动可能需要系统设置中的“仍要打开”。
-
-[中文介绍](https://github.com/fgyg007/appsweep#readme) · [安装、权限与校验说明](https://github.com/fgyg007/appsweep/blob/v1.0.0/docs/INSTALL.md)
+发布包为 ad-hoc 签名，未 Apple Developer ID 签名或公证；首次打开可能需要系统“仍要打开”。[安装说明](https://github.com/fgyg007/appsweep/blob/v1.0.1/docs/INSTALL.md)。
 
 ## English
 
-First public release under the MIT license.
+Fixes severely underestimated sizes for apps such as OneDrive containing framework symlinks. The old traversal could skip real sibling files. The same issue in embedded-extension discovery is also fixed.
 
-- Drag or choose an app; review common user-level leftovers and matching reasons.
-- Confirm moves to Trash and restore recorded items without overwriting files.
-- Protections for system apps, the cleaner itself, symlinks, and running apps.
-- Bilingual documentation, MIT license, arm64 DMG, and SHA-256 checksum.
+- Verified OneDrive installation: 135,602,176 bytes before; 1,045,090,304 bytes after, matching a full traversal.
+- Symlink targets remain excluded, including targets outside the app.
+- All 20 automated checks pass, including new regression coverage, matching, link isolation, restore conflicts, and a real Trash/restore round trip with disposable fixtures.
+- Confirmed removals still move entire selected items to Trash; receipt format is unchanged.
 
-**Download: `AppSweep-1.0.0-arm64.dmg`.** The auto-generated Source code ZIP/TAR files are not installers.
+Download **AppSweep-1.0.1-arm64.dmg**. Quit the old app before replacing it in Applications. Source-code ZIPs are not installers.
 
-**Requires Apple Silicon (M-series, arm64), macOS 14 Sonoma or later.** Intel Macs are not supported by this package. Runtime verification was performed on macOS 27.0.1 / Apple Silicon, not every older OS version. The app UI is Simplified Chinese.
+Requires **Apple Silicon (M-series), macOS 14+**. The app UI is Simplified Chinese. Verified on macOS 27.0.1 / Apple Silicon, not every older OS version.
 
-Open the DMG, drag `轻卸.app` to Applications, eject the image, and launch the installed app. This release is **ad-hoc signed, without Developer ID signing or Apple notarization**. macOS may require the Open Anyway flow on first launch.
-
-[English overview](https://github.com/fgyg007/appsweep/blob/v1.0.0/README.en.md) · [Installation and checksums](https://github.com/fgyg007/appsweep/blob/v1.0.0/docs/INSTALL.md)
+Ad-hoc signed, without Developer ID signing or notarization. macOS may require Open Anyway on first launch. [Installation guide](https://github.com/fgyg007/appsweep/blob/v1.0.1/docs/INSTALL.md).
 
 ## SHA-256
 
-Download `SHA256SUMS.txt` alongside the DMG, then run / 将校验文件与 DMG 放在同一目录，执行：
+Download SHA256SUMS.txt alongside the DMG and run / 将校验文件与 DMG 放在同一目录执行：
 
 ```sh
 shasum -a 256 -c SHA256SUMS.txt

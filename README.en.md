@@ -31,7 +31,7 @@ AppSweep is intended for everyday third-party desktop app removal. It has no res
 
 ## Download and use
 
-1. Download `AppSweep-1.0.0-arm64.dmg` from the [latest release](https://github.com/fgyg007/appsweep/releases/latest).
+1. Download `AppSweep-1.0.1-arm64.dmg` from the [latest release](https://github.com/fgyg007/appsweep/releases/latest).
 2. Open the DMG, drag `轻卸.app` to **Applications**, eject the image, and launch the installed app.
 3. Quit the app you intend to uninstall, then drag its `.app` bundle into AppSweep or click `选择应用…` (Choose Application).
 4. Review each candidate's path and explanation. Configuration and app data may include accounts, projects, or work history; select only what you intend to remove.

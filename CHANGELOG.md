@@ -1,5 +1,14 @@
 # Changelog / 更新记录
 
+## 1.0.1 — 2026-10-16
+
+- 修复应用内部符号链接导致目录遍历跳过真实文件、严重低估容量的问题。OneDrive 实测从约 135.6 MB 修正为约 1.045 GB。
+- 同时修复内置扩展扫描的相同遍历问题；不跟随符号链接、不扫描链接指向的外部数据。
+- 新增 framework 目录结构回归测试，覆盖容量、扩展识别与链接隔离；20 项检查通过。
+- Fixed symlink handling that skipped real sibling files and severely undercounted app sizes. OneDrive now measures approximately 1.045 GB instead of 135.6 MB in the verified installation.
+- Applied the same fix to embedded-extension discovery while continuing to exclude symlink targets. Added regression coverage; all 20 checks pass.
+- 卸载仍是确认后移动整个已选项目到废纸篓；数据格式与系统要求不变。Trash/restore semantics, data format, and system requirements are unchanged.
+
 ## 1.0.0 — 2026-10-15
 
 首次公开发布 / First public release.

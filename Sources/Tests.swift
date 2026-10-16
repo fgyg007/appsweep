@@ -24,6 +24,29 @@ import Foundation
         func check(_ value: @autoclosure () -> Bool, _ name: String) throws {
             guard value() else { throw CleanerError.message("FAIL: " + name) }; print("PASS: " + name)
         }
+        // Framework-style symlinks must not hide real sibling directories.
+        // Expected bytes are measured from known regular files, not a traversal.
+        let frameworkApp = try app("Fixtures/Frameworks.app", id: "org.example.frameworks")
+        var expectedBytes = Scanner.size(frameworkApp.appendingPathComponent("Contents/Info.plist"))
+        for i in 0..<8 {
+            let base = "Fixtures/Frameworks.app/Contents/Frameworks/Test\(i).framework"
+            let payload = try file(base + "/Versions/A/Binary")
+            try Data(repeating: UInt8(i), count: 16384 + i * 4096).write(to: payload)
+            expectedBytes += Scanner.size(payload)
+            try fm.createSymbolicLink(at: home.appendingPathComponent(base + "/Binary"), withDestinationURL: payload)
+            try fm.createSymbolicLink(at: home.appendingPathComponent(base + "/Versions/Current"), withDestinationURL: payload.deletingLastPathComponent())
+        }
+        let outside = try file("Outside/not-app-data")
+        try Data(repeating: 42, count: 131072).write(to: outside)
+        let outsideLink = frameworkApp.appendingPathComponent("Contents/External")
+        try fm.createSymbolicLink(at: outsideLink, withDestinationURL: outside.deletingLastPathComponent())
+        try check(Scanner.size(frameworkApp) == expectedBytes, "framework links neither skip real files nor count external/duplicate targets")
+        try check(Scanner.size(outsideLink) == 0, "top-level directory symlink has zero estimated bytes")
+        let extensionApp = try app("Fixtures/Frameworks.app/Contents/PlugIns/Worker.appex", id: "org.example.frameworks.worker")
+        let extensionCache = try file("Library/Caches/org.example.frameworks.worker/data")
+        let frameworkScan = try Scanner.scan(frameworkApp, home: home)
+        try check(frameworkScan.items.contains { $0.url == extensionCache.deletingLastPathComponent() && $0.recommended }, "embedded extension after framework links is still discovered")
+        try check(frameworkScan.items.first?.bytes == expectedBytes + Scanner.size(extensionApp), "scan application size includes all real framework and extension files")
         let a = try app("Applications/Demo.app", id: "org.example.demo")
         let pref = try file("Library/Preferences/org.example.demo.plist")
         let cache = try file("Library/Caches/org.example.demo/data")

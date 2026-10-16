@@ -43,7 +43,9 @@ enum Scanner {
         var n: Int64 = 0
         for case let p as URL in e {
             guard let v = try? p.resourceValues(forKeys: keys) else { continue }
-            if v.isSymbolicLink == true { e.skipDescendants(); continue }
+            // DirectoryEnumerator does not follow symlinks. Calling
+            // skipDescendants here can skip real siblings in the parent.
+            if v.isSymbolicLink == true { continue }
             if v.isRegularFile == true { n += Int64(v.fileAllocatedSize ?? 0) }
         }
         return n
@@ -64,7 +66,7 @@ enum Scanner {
         var ids: Set<String> = [bid]
         if let e = FileManager.default.enumerator(at: app.appendingPathComponent("Contents"), includingPropertiesForKeys: [.isSymbolicLinkKey]) {
             for case let p as URL in e {
-                if (try? p.resourceValues(forKeys: [.isSymbolicLinkKey]))?.isSymbolicLink == true { e.skipDescendants(); continue }
+                if (try? p.resourceValues(forKeys: [.isSymbolicLinkKey]))?.isSymbolicLink == true { continue }
                 if ["app", "appex", "xpc"].contains(p.pathExtension), let id = identity(p), id.hasPrefix(bid + ".") { ids.insert(id) }
             }
         }
