@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 
 struct CleanItem: Identifiable, Hashable {
     var id: String { url.path }
@@ -138,7 +139,7 @@ final class HistoryStore {
             return try? decoder.decode(Receipt.self, from: data)
         }.sorted { $0.date > $1.date }
     }
-    func trash(_ items: [CleanItem], name: String, mover: ((URL) throws -> URL)? = nil) throws -> Receipt {
+    @MainActor func trash(_ items: [CleanItem], name: String, mover: ((URL) async throws -> URL)? = nil) async throws -> Receipt {
         var receipt = Receipt(id: UUID().uuidString, name: name, date: Date(), records: items.map { MoveRecord(original: $0.url.path, status: "pending") })
         try save(receipt)
         for i in receipt.records.indices {
@@ -149,18 +150,89 @@ final class HistoryStore {
                     throw CleanerError.message("文件已变化或路径包含链接，请重新扫描。")
                 }
                 let dest: URL
-                if let mover { dest = try mover(src) }
+                if let mover { dest = try await mover(src) }
                 else {
-                    var output: NSURL?
-                    try fm.trashItem(at: src, resultingItemURL: &output)
-                    guard let output else { throw CleanerError.message("已移动，但系统未返回废纸篓路径，请在 Finder 中查看。") }
-                    dest = output as URL
+                    // Finder's recycling service owns any required authentication UI.
+                    // Await its result without blocking the main run loop.
+                    do {
+                    dest = try await withCheckedThrowingContinuation { continuation in
+                        NSWorkspace.shared.recycle([src]) { destinations, error in
+                            if let destination = destinations[src] {
+                                continuation.resume(returning: destination)
+                            } else {
+                                continuation.resume(throwing: error ?? CleanerError.message("系统未返回废纸篓路径，请在 Finder 中检查。"))
+                            }
+                        }
+                    }
+                    } catch {
+                        let failure = error as NSError
+                        guard failure.domain == NSCocoaErrorDomain &&
+                            [NSFileWriteNoPermissionError, NSFileReadNoPermissionError].contains(failure.code) else { throw error }
+                        dest = try await Self.recycleWithFinder(src)
+                    }
                 }
                 receipt.records[i].trashed = dest.path; receipt.records[i].status = "moved"
-            } catch { receipt.records[i].status = "failed"; receipt.records[i].error = error.localizedDescription }
+            } catch {
+                receipt.records[i].status = "failed"; receipt.records[i].error = error.localizedDescription
+                let nsError = error as NSError
+                if (nsError.domain == NSCocoaErrorDomain && nsError.code == NSUserCancelledError) ||
+                   (nsError.domain == NSOSStatusErrorDomain && nsError.code == -128) {
+                    // A cancelled system dialog must not cause more authorization prompts.
+                    for pending in receipt.records.indices where receipt.records[pending].status == "pending" {
+                        receipt.records[pending].status = "failed"
+                        receipt.records[pending].error = "用户取消了操作，未处理此项。"
+                    }
+                    try save(receipt)
+                    return receipt
+                }
+            }
             try save(receipt)
         }
         return receipt
+    }
+    // Paths are separate arguments, never interpolated into AppleScript or a shell.
+    // Finder owns the administrator prompt; this app never handles passwords.
+    private static func recycleWithFinder(_ source: URL) async throws -> URL {
+        try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let process = Process()
+                process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+                process.arguments = ["-e", """
+                on run argv
+                    set sourceFile to POSIX file (item 1 of argv)
+                    tell application "Finder"
+                        set trashedFile to delete sourceFile
+                        return POSIX path of (trashedFile as alias)
+                    end tell
+                end run
+                """, source.path]
+                let output = Pipe(), errors = Pipe()
+                process.standardOutput = output; process.standardError = errors
+                do {
+                    try process.run()
+                    let data = output.fileHandleForReading.readDataToEndOfFile()
+                    let errorData = errors.fileHandleForReading.readDataToEndOfFile()
+                    process.waitUntilExit()
+                    let details = String(decoding: errorData, as: UTF8.self)
+                    if process.terminationStatus != 0 {
+                        if details.contains("(-128)") {
+                            throw NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError)
+                        }
+                        if details.contains("(-1743)") {
+                            throw CleanerError.message("请在系统设置 → 隐私与安全性 → 自动化中允许轻卸控制 Finder，再重试。")
+                        }
+                        throw CleanerError.message(details.trimmingCharacters(in: .whitespacesAndNewlines))
+                    }
+                    // osascript adds one newline; preserve whitespace in real filenames.
+                    var path = String(decoding: data, as: UTF8.self)
+                    if path.hasSuffix("\n") { path.removeLast() }
+                    guard path.hasPrefix("/"), path != source.path else {
+                        throw CleanerError.message("Finder 未返回有效的废纸篓路径，请检查 Finder。")
+                    }
+                    continuation.resume(returning: URL(fileURLWithPath: path))
+                } catch { continuation.resume(throwing: error) }
+            }
+        }
     }
     func restore(_ input: Receipt) throws -> Receipt {
         var receipt = input

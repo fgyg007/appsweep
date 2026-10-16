@@ -17,11 +17,12 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <key>CFBundleName</key><string>轻卸</string>
 <key>CFBundleDisplayName</key><string>轻卸</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>1.0.1</string>
-<key>CFBundleVersion</key><string>2</string>
+<key>CFBundleShortVersionString</key><string>1.0.2</string>
+<key>CFBundleVersion</key><string>3</string>
 <key>CFBundleIconFile</key><string>AppIcon</string>
 <key>LSMinimumSystemVersion</key><string>14.0</string>
 <key>NSHighResolutionCapable</key><true/>
+<key>NSAppleEventsUsageDescription</key><string>轻卸需要通过 Finder 将需管理员授权的所选文件移入废纸篓。密码由 macOS 验证，轻卸不会读取或保存。</string>
 <key>NSPrincipalClass</key><string>NSApplication</string>
 </dict></plist>
 PLIST

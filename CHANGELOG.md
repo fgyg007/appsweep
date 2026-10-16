@@ -1,5 +1,13 @@
 # Changelog / 更新记录
 
+## 1.0.2 — 2026-10-16
+
+- 权限不足时交给 Finder 处理系统授权，不读取或保存管理员密码。首次使用可能需允许轻卸控制 Finder。
+- 卸载异步执行，等待系统窗口时界面保持响应；取消后停止剩余项目，保留失败及已完成记录。
+- Permission failures now fall back to Finder's system authorization flow. Administrator passwords are never read or saved. First use may require permission to control Finder.
+- Recycling is asynchronous; cancelling stops remaining items and retains accurate receipts.
+
+
 ## 1.0.1 — 2026-10-16
 
 - 修复应用内部符号链接导致目录遍历跳过真实文件、严重低估容量的问题。OneDrive 实测从约 135.6 MB 修正为约 1.045 GB。

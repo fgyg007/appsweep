@@ -1,38 +1,36 @@
-# 轻卸 · AppSweep v1.0.1
+# 轻卸 · AppSweep v1.0.2
 
 ## 中文
 
-修复 OneDrive 等包含 framework 符号链接的应用容量被严重低估的问题。旧遍历会跳过其他真实文件，现已修正；内置扩展识别中的相同问题也已修复。
+修复卸载遇到权限不足时只报错、不引导系统授权的问题。
 
-- 本机 OneDrive 实测：旧版 135,602,176 字节，新版 1,045,090,304 字节，与完整遍历一致。
-- 仍不跟随符号链接，不把链接指向的外部文件算作应用数据。
-- 20 项自动检查通过，包括新回归测试、精确匹配、外部链接隔离、恢复冲突及临时文件的真实废纸篓往返。
-- 卸载仍是确认后移动整个已选项目到废纸篓，未改变恢复记录格式。
+- 普通移除使用 macOS 废纸篓服务；权限不足时交由 Finder 处理授权。密码由系统验证，轻卸不读取或保存。
+- 首次使用可能出现允许轻卸控制 Finder 的自动化授权。拒绝后可到系统设置 → 隐私与安全性 → 自动化修改。
+- 授权是否需要、显示密码还是其他验证方式，由 macOS 决定。完全磁盘访问等隐私权限仍需在系统设置单独授权。
+- 异步等待系统操作，界面保持响应。取消后不再处理剩余项目；已完成项目仍可从历史恢复。
+- 22 项自动检查通过；额外用只读目录中的临时文件验证权限失败后的 Finder 路径，移入废纸篓及恢复成功。
+- 保留 v1.0.1 的容量修复及原有卸载记录格式。
 
-下载 **AppSweep-1.0.1-arm64.dmg**，退出旧版轻卸后替换 Applications 中的应用。源码 ZIP 不是安装包。
-
-运行环境：**Apple Silicon（M 系列）、macOS 14+**。应用界面为简体中文。本次验证环境为 macOS 27.0.1 / Apple Silicon，未逐一验证旧系统。
-
-发布包为 ad-hoc 签名，未 Apple Developer ID 签名或公证；首次打开可能需要系统“仍要打开”。[安装说明](https://github.com/fgyg007/appsweep/blob/v1.0.1/docs/INSTALL.md)。
+下载 **AppSweep-1.0.2-arm64.dmg**，退出旧版后替换应用。运行环境：**Apple Silicon（M 系列）、macOS 14+**。界面为简体中文，验证环境为 macOS 27.0.1 / Apple Silicon，未逐一测试旧系统。
 
 ## English
 
-Fixes severely underestimated sizes for apps such as OneDrive containing framework symlinks. The old traversal could skip real sibling files. The same issue in embedded-extension discovery is also fixed.
+Fixes permission-denied removals that previously stopped without an authorization flow.
 
-- Verified OneDrive installation: 135,602,176 bytes before; 1,045,090,304 bytes after, matching a full traversal.
-- Symlink targets remain excluded, including targets outside the app.
-- All 20 automated checks pass, including new regression coverage, matching, link isolation, restore conflicts, and a real Trash/restore round trip with disposable fixtures.
-- Confirmed removals still move entire selected items to Trash; receipt format is unchanged.
+- Uses macOS recycling, falling back to Finder on permission errors. macOS owns authentication; the app never reads or saves administrator passwords.
+- First use may require Automation permission to control Finder. Change a denied permission in System Settings → Privacy & Security → Automation.
+- macOS decides whether authentication is needed and which verification UI to show. Privacy permissions such as Full Disk Access remain separate.
+- Asynchronous operation keeps the UI responsive. Cancellation stops remaining items; already moved items remain recoverable from history.
+- All 22 automated checks pass. An additional disposable file in a read-only directory verified the permission-denied Finder fallback and successful Trash/restore round trip.
+- Retains the size fix from v1.0.1 and the existing receipt format.
 
-Download **AppSweep-1.0.1-arm64.dmg**. Quit the old app before replacing it in Applications. Source-code ZIPs are not installers.
+Download **AppSweep-1.0.2-arm64.dmg**. Quit the old app before replacing it. Requires **Apple Silicon (M-series), macOS 14+**. Simplified Chinese UI; verified on macOS 27.0.1 / Apple Silicon, not every older OS version.
 
-Requires **Apple Silicon (M-series), macOS 14+**. The app UI is Simplified Chinese. Verified on macOS 27.0.1 / Apple Silicon, not every older OS version.
+## 安装与校验 / Installation and verification
 
-Ad-hoc signed, without Developer ID signing or notarization. macOS may require Open Anyway on first launch. [Installation guide](https://github.com/fgyg007/appsweep/blob/v1.0.1/docs/INSTALL.md).
+Ad-hoc 签名，未 Developer ID 签名或公证，首次打开可能需要“仍要打开”。Ad-hoc signed, without Developer ID signing or notarization; Open Anyway may be required. [安装说明 / Installation guide](https://github.com/fgyg007/appsweep/blob/v1.0.2/docs/INSTALL.md).
 
-## SHA-256
-
-Download SHA256SUMS.txt alongside the DMG and run / 将校验文件与 DMG 放在同一目录执行：
+将 SHA256SUMS.txt 与 DMG 放在同一目录 / Download both files into one directory:
 
 ```sh
 shasum -a 256 -c SHA256SUMS.txt

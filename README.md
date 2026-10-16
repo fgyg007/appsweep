@@ -31,7 +31,7 @@
 
 ## 下载与使用
 
-1. 从[最新版本](https://github.com/fgyg007/appsweep/releases/latest)下载 `AppSweep-1.0.1-arm64.dmg`。
+1. 从[最新版本](https://github.com/fgyg007/appsweep/releases/latest)下载 `AppSweep-1.0.2-arm64.dmg`。
 2. 打开 DMG，将 `轻卸.app` 拖到 **Applications**。推出 DMG，再打开安装后的应用。
 3. 先退出要卸载的软件，然后拖入它的 `.app`，或点击“选择应用”。
 4. 检查每个候选项的路径与说明。配置与数据可能包含账号、项目或工作记录；只勾选你确定不再需要的项目。

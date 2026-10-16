@@ -39,19 +39,24 @@ import UniformTypeIdentifiers
         }
         guard !running else { message = "\(result.name) 仍在运行，请先退出应用后再卸载。"; return }
         let alert = NSAlert(); alert.messageText = "将 \(chosen.count) 项移入废纸篓？"
-        alert.informativeText = "应用：\(result.name)\n合计约 \(total)\n包括勾选的配置与数据。废纸篓清空前可从历史记录恢复。"
+        alert.informativeText = "应用：\(result.name)\n合计约 \(total)\n包括勾选的配置与数据。废纸篓清空前可从历史记录恢复。\n如需管理员权限，macOS 会请求系统授权；取消授权不会强制删除。"
         alert.addButton(withTitle: "移入废纸篓"); alert.addButton(withTitle: "取消")
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         busy = true
-        do {
-            let receipt = try store.trash(chosen, name: result.name)
-            let moved = receipt.records.filter { $0.status == "moved" }.count
-            let failed = receipt.records.filter { $0.status == "failed" }
-            message = "已移入废纸篓 \(moved) 项，未清空废纸篓。" + (failed.isEmpty ? "" : "\n\(failed.count) 项未完成：\(failed.first?.error ?? "请查看历史记录")")
-            self.result = nil; selected = []; history = store.list()
-        } catch { message = "操作未全部完成：" + error.localizedDescription; history = store.list() }
-        busy = false
+        let items = chosen
+        message = "正在移入废纸篓，如出现系统授权框，请完成授权或取消。"
+        Task {
+            defer { busy = false }
+            do {
+                let receipt = try await store.trash(items, name: result.name)
+                let moved = receipt.records.filter { $0.status == "moved" }.count
+                let failed = receipt.records.filter { $0.status == "failed" }
+                message = "已移入废纸篓 \(moved) 项，未清空废纸篓。" + (failed.isEmpty ? "" : "\n\(failed.count) 项未完成：\(failed.first?.error ?? "请查看历史记录")")
+                self.result = nil; selected = []; history = store.list()
+            } catch { message = "操作未全部完成：" + error.localizedDescription; history = store.list() }
+        }
     }
+
     func restore(_ receipt: Receipt) {
         guard !busy else { return }
         busy = true

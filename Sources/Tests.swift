@@ -1,7 +1,7 @@
 import Foundation
 
 @main struct Tests {
-    static func main() throws {
+    @MainActor static func main() async throws {
         let fm = FileManager.default
         var root = URL(fileURLWithPath: fm.currentDirectoryPath).appendingPathComponent("build/AppSweep-test-" + UUID().uuidString)
         try fm.createDirectory(at: root, withIntermediateDirectories: true)
@@ -75,7 +75,7 @@ import Foundation
         let trash = root.appendingPathComponent("trash")
         try fm.createDirectory(at: trash, withIntermediateDirectories: true)
         let items = scan.items.filter { $0.url.path == pref.path || $0.url.path == cache.deletingLastPathComponent().path }
-        let receipt = try store.trash(items, name: "Demo", mover: { src in
+        let receipt = try await store.trash(items, name: "Demo", mover: { src in
             let dst = trash.appendingPathComponent(UUID().uuidString)
             try fm.moveItem(at: src, to: dst); return dst
         })
@@ -88,9 +88,16 @@ import Foundation
         let restored = try store.restore(partial)
         try check(restored.records.allSatisfy { $0.status == "restored" }, "restore retries conflict and restores all files")
         try check(fm.fileExists(atPath: pref.path) && fm.fileExists(atPath: cache.path), "restored files exist")
-        let fail = try store.trash(items, name: "Denied", mover: { _ in throw CleanerError.message("permission denied fixture") })
+        let fail = try await store.trash(items, name: "Denied", mover: { _ in throw CleanerError.message("permission denied fixture") })
         try check(fail.records.allSatisfy { $0.status == "failed" } && fm.fileExists(atPath: pref.path), "failed moves retain source and record error")
-        let real = try store.trash(items, name: "Disposable integration fixture")
+        var attempts = 0
+        let cancelled = try await store.trash(items, name: "Cancelled", mover: { _ in
+            attempts += 1
+            throw NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError)
+        })
+        try check(attempts == 1 && cancelled.records.allSatisfy { $0.status == "failed" }, "cancelled authorization stops remaining items without repeated prompts")
+        try check(fm.fileExists(atPath: pref.path) && fm.fileExists(atPath: cache.path), "cancelled authorization leaves original files intact")
+        let real = try await store.trash(items, name: "Disposable integration fixture")
         try check(real.records.allSatisfy { $0.status == "moved" && $0.trashed != nil }, "macOS real Trash API returns recoverable paths")
         let realRestored = try store.restore(real)
         try check(realRestored.records.allSatisfy { $0.status == "restored" }, "real Trash round trip restores fixture files")
